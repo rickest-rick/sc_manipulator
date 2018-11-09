@@ -11,6 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = SeamCarving
 TEMPLATE = app
 
+QMAKE_CFLAGS_ISYSTEM = -I
 
 SOURCES += main.cpp\
         MainWindow.cpp \
@@ -41,7 +42,8 @@ unix {
     LIBS += -L/usr/local/lib \
             -lopencv_core \
             -lopencv_highgui \
-            -lopencv_imgproc
+            -lopencv_imgproc \
+            -lopencv_imgcodecs
 
     QMAKE_CXXFLAGS_WARN_ON = -Wno-unused-variable -Wno-reorder
 }

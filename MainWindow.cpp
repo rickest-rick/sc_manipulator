@@ -56,12 +56,83 @@ void MainWindow::on_pbComputeSeams_clicked()
     /* Anzahl der Zeilen, die entfernt werden sollen */
     int rowsToRemove = sbRows->value();
     
-    /* .............. */
+    /* Compute energy function. */
+    cv::Mat gradientImage;
+    cv::cvtColor(originalImage, gradientImage, cv::COLOR_BGR2GRAY);
+    cv::Mat result;
+    cv::imshow("bw", gradientImage);
+    sobel(gradientImage,result);
+
+    /* Compute seams and store them. */
 }
 
 void MainWindow::on_pbRemoveSeams_clicked()
 {
-    /* .............. */
+    /* Check if seams were already computed. */
+    if (seams_horizontal.size() == 0 && seams_vertical.size() == 0) {
+        noSeamsError();
+        return;
+    }
+
+    /* Remove all seams that were computed earlier. */
+
+}
+
+void MainWindow::sobel(const cv::Mat& myImage, cv::Mat& Result)
+{
+    CV_Assert(myImage.depth() == CV_8U);  // accept only uchar images
+    const int nChannels = myImage.channels();
+    Result.create(myImage.size(),myImage.type());
+
+    /* compute horizontal sobel f_x */
+    for (int j = 1; j < myImage.rows-1; j++)
+    {
+        const uchar* previous = myImage.ptr<uchar>(j - 1);
+        const uchar* next     = myImage.ptr<uchar>(j + 1);
+        uchar* output = Result.ptr<uchar>(j);
+        for (int i = nChannels; i < nChannels*(myImage.cols-1); i++)
+        {
+            *output++ = cv::saturate_cast<uchar>(next[i-nChannels] + 2 * next[i] + next[i+nChannels]
+                    - previous[i-nChannels] - 2 * previous[i] - previous[i+nChannels]);
+        }
+    }
+
+    /* set edges to neighbouring values */
+    Result.row(1).copyTo(Result.row(0));
+    Result.row(Result.rows-2).copyTo(Result.row(Result.rows-1));
+    Result.col(1).copyTo(Result.col(0));
+    Result.col(Result.cols-2).copyTo(Result.col(Result.cols-1));
+
+    cv::imshow("Horizontal Sobel", Result);
+
+    /* compute vertical sobel */
+    cv::Mat ResultY;
+    ResultY.create(myImage.size(),myImage.type());
+    for(int j = 1; j < myImage.rows-1; j++)
+    {
+        const uchar* previous = myImage.ptr<uchar>(j - 1);
+        const uchar* current = myImage.ptr<uchar>(j);
+        const uchar* next     = myImage.ptr<uchar>(j + 1);
+        uchar* output = ResultY.ptr<uchar>(j);
+        for(int i= nChannels; i < nChannels*(myImage.cols-1); ++i)
+        {
+            *output++ = cv::saturate_cast<uchar>(previous[i+nChannels] + 2 * current[i+nChannels]
+                    + next[i+nChannels] - previous[i-nChannels] - 2 * current[i-nChannels]
+                    - next[i-nChannels]);
+        }
+    }
+    /* set edges to neighbouring values */
+    Result.row(1).copyTo(Result.row(0));
+    Result.row(Result.rows-2).copyTo(Result.row(Result.rows-1));
+    Result.col(1).copyTo(Result.col(0));
+    Result.col(Result.cols-2).copyTo(Result.col(Result.cols-1));
+
+    cv::imshow("Vertical Sobel", ResultY);
+
+    cv::add(Result, ResultY, Result);
+    cv::imshow("All Sobel", Result);
+
+    /* add vertical gradients to horizontal gradients on input image */
 }
 
 void MainWindow::setupUi()
@@ -166,4 +237,11 @@ void MainWindow::disableGUI()
     
     pbComputeSeams->setEnabled(false);
     pbRemoveSeams->setEnabled(false);
+}
+
+void MainWindow::noSeamsError()
+{
+    QMessageBox messageBox;
+    messageBox.critical(0, "No Seams", "No seams were calculated that can be removed.");
+    messageBox.show();
 }

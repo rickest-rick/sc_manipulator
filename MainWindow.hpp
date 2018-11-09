@@ -9,6 +9,8 @@
 #include <QLabel>
 #include <QGroupBox>
 #include <QStatusBar>
+#include <QMessageBox>
+#include <vector>
 
 #include "ImageReader.hpp"
 #include "QtOpencvCore.hpp"
@@ -64,7 +66,10 @@ private:
     
     /* Originalbild */
     cv::Mat         originalImage;
-    /* Eventuell weitere Klassenattribute */
+
+    /* computed seams */
+    std::vector<std::vector<int>> seams_horizontal;
+    std::vector<std::vector<int>> seams_vertical;
     
     /* Methode initialisiert die UI */
     void setupUi();
@@ -72,6 +77,12 @@ private:
     /* Methoden aktivieren bzw. deaktivieren die UI */
     void enableGUI();
     void disableGUI();
+
+    /* Method that shows error message that no seams are present that can be removed. */
+    void noSeamsError();
+
+    /* */
+    void sobel(const cv::Mat& myImage, cv::Mat& result);
 };
 
 #endif // MAINWINDOW_HPP
