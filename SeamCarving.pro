@@ -16,11 +16,13 @@ QMAKE_CFLAGS_ISYSTEM = -I
 SOURCES += main.cpp\
         MainWindow.cpp \
         ImageReader.cpp \
-        QtOpencvCore.cpp
+        QtOpencvCore.cpp \
+        SeamFunctions.cpp
 
 HEADERS  += MainWindow.hpp \
         ImageReader.hpp \
-        QtOpencvCore.hpp
+        QtOpencvCore.hpp \
+    SeamFunctions.hpp
 
 FORMS    +=
 

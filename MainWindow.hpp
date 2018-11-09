@@ -1,6 +1,8 @@
 #ifndef MAINWINDOW_HPP
 #define MAINWINDOW_HPP
 
+#include <vector>
+
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QPushButton>
@@ -10,12 +12,12 @@
 #include <QGroupBox>
 #include <QStatusBar>
 #include <QMessageBox>
-#include <vector>
 
 #include "ImageReader.hpp"
 #include "QtOpencvCore.hpp"
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
+#include "SeamFunctions.hpp"
 
 
 class MainWindow : public QMainWindow
@@ -80,9 +82,6 @@ private:
 
     /* Method that shows error message that no seams are present that can be removed. */
     void noSeamsError();
-
-    /* */
-    void sobel(const cv::Mat& myImage, cv::Mat& result);
 };
 
 #endif // MAINWINDOW_HPP
