@@ -66,12 +66,17 @@ void MainWindow::on_pbComputeSeams_clicked()
 
     cv::Mat gradientImageCopy = gradientImage;
     /* In the beginning, all pixel are not blocked. Matrix has two extra columns for the borders. */
-    std::vector<std::vector<bool>> blockedPixels(rowsToRemove, std::vector<bool>(colsToRemove + 2, false));
+    std::vector<std::vector<bool>> blockedPixels(gradientImage.rows, std::vector<bool>(gradientImage.cols + 2, false));
 
     /* Compute vertical seams and store them. */
     for (int i = 0; i < colsToRemove; i++) {
-        std::vector<std::pair<quint32, quint32>> seam = seam::seamVertical(gradientImage, blockedPixels);
+        std::vector<uint> seam = seam::seamVertical(gradientImage, blockedPixels);
         seamsVertical.emplace_back(seam);
+    }
+    for (int row = 0; row < gradientImage.rows; row++){
+        for (auto& seam : seamsVertical) {
+            std::cout << "row: " << row << " col: " << seam[row];
+        }
     }
     /* Reset blocked pixels. In the beginning, all pixel are not blocked. Matrix has two extra columns
      * for the borders. */
@@ -82,7 +87,7 @@ void MainWindow::on_pbComputeSeams_clicked()
 
     /* Compute horizontal seams and store them. */
     for (int i = 0; i < rowsToRemove; i++) {
-        std::vector<std::pair<quint32, quint32>> seam = seam::seamHorizontal(gradientImageCopy, blockedPixels);
+        std::vector<uint> seam = seam::seamHorizontal(gradientImageCopy, blockedPixels);
         seamsHorizontal.emplace_back(seam);
     }
     gradientImage.release();

@@ -2,7 +2,6 @@
 #define SEAMFUNCTIONS_H
 
 #include <vector>
-#include <utility>
 #include <iostream>
 
 #include "QtOpencvCore.hpp"
@@ -28,10 +27,10 @@ namespace seam {
      * @details Computes the seam in vertical direction with the lowest sum of energy.
      * For every pixel, only the three neighboring pixels above are considered. To enable
      * the computation of multiple seams, for every row the seams pixel and the two to
-     * the left and right are set to 255.
+     * the left and right are set to 255. The row of each pixel is implicitly stored in the
+     * index of the vector.
      */
-    std::vector<std::pair<quint32, quint32>> seamVertical(cv::Mat& gradientImage,
-                                                          std::vector<std::vector<bool>>& blockedPixels);
+    std::vector<uint> seamVertical(cv::Mat& gradientImage, std::vector<std::vector<bool>>& blockedPixels);
 
     /**
      * @brief Computes the seam in horizontal direction with the lowest sum of energy.
@@ -41,10 +40,10 @@ namespace seam {
      * @details Computes the seam in horizontal direction with the lowest sum of energy.
      * For every pixel, only the three neighboring pixels to the left are considered. To enable
      * the computation of multiple seams, for every column the seam's pixel and the two above
-     * and below are set to 255.
+     * and below are set to 255. The column of each pixel is implicitly stored in the index of
+     * the vector.
      */
-    std::vector<std::pair<quint32,quint32>> seamHorizontal(cv::Mat& gradientImage,
-                                                           std::vector<std::vector<bool>>& blockedPixels);
+    std::vector<uint> seamHorizontal(cv::Mat& gradientImage, std::vector<std::vector<bool>>& blockedPixels);
 } // namespace
 
 #endif // SEAMFUNCTIONS_H
