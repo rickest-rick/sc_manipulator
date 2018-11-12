@@ -75,8 +75,9 @@ void MainWindow::on_pbComputeSeams_clicked()
     }
     for (int row = 0; row < gradientImage.rows; row++){
         for (auto& seam : seamsVertical) {
-            std::cout << "row: " << row << " col: " << seam[row];
+            std::cout << "row: " << row << " col: " << seam[row] << std::endl;
         }
+        std::cout << " " << std::endl;
     }
     /* Reset blocked pixels. In the beginning, all pixel are not blocked. Matrix has two extra columns
      * for the borders. */
