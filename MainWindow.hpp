@@ -2,6 +2,7 @@
 #define MAINWINDOW_HPP
 
 #include <vector>
+#include <algorithm>
 
 #include <QMainWindow>
 #include <QFileDialog>
@@ -70,8 +71,8 @@ private:
     cv::Mat         originalImage;
 
     /* computed seams */
-    std::vector<std::vector<int>> seams_horizontal;
-    std::vector<std::vector<int>> seams_vertical;
+    std::vector<std::vector<std::pair<uint, uint>>> seamsHorizontal;
+    std::vector<std::vector<std::pair<uint, uint>>> seamsVertical;
     
     /* Methode initialisiert die UI */
     void setupUi();

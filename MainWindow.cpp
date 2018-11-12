@@ -1,4 +1,5 @@
 #include "MainWindow.hpp"
+#include <string>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
@@ -61,15 +62,37 @@ void MainWindow::on_pbComputeSeams_clicked()
     cv::cvtColor(originalImage, grayscaleImage, cv::COLOR_BGR2GRAY);
     cv::Mat gradientImage;
     seam::sobel(grayscaleImage, gradientImage);
-    cv::imshow("grad", gradientImage);
+    grayscaleImage.release();
 
-    /* Compute seams and store them. */
+    cv::Mat gradientImageCopy = gradientImage;
+    /* In the beginning, all pixel are not blocked. Matrix has two extra columns for the borders. */
+    std::vector<std::vector<bool>> blockedPixels(rowsToRemove, std::vector<bool>(colsToRemove + 2, false));
+
+    /* Compute vertical seams and store them. */
+    for (int i = 0; i < colsToRemove; i++) {
+        std::vector<std::pair<quint32, quint32>> seam = seam::seamVertical(gradientImage, blockedPixels);
+        seamsVertical.emplace_back(seam);
+    }
+    /* Reset blocked pixels. In the beginning, all pixel are not blocked. Matrix has two extra columns
+     * for the borders. */
+    for (auto& row : blockedPixels) {
+        std::fill(row.begin(), row.end(), 0);
+    }
+    cv::imshow("vertical seams", gradientImage);
+
+    /* Compute horizontal seams and store them. */
+    for (int i = 0; i < rowsToRemove; i++) {
+        std::vector<std::pair<quint32, quint32>> seam = seam::seamHorizontal(gradientImageCopy, blockedPixels);
+        seamsHorizontal.emplace_back(seam);
+    }
+    gradientImage.release();
+    gradientImageCopy.release();
 }
 
 void MainWindow::on_pbRemoveSeams_clicked()
 {
     /* Check if seams were already computed. */
-    if (seams_horizontal.size() == 0 && seams_vertical.size() == 0) {
+    if (seamsHorizontal.size() == 0 && seamsVertical.size() == 0) {
         noSeamsError();
         return;
     }

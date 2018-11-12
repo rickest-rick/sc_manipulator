@@ -7,13 +7,11 @@ void seam::sobel(const cv::Mat& myImage, cv::Mat& Result)
     Result.create(myImage.size(),myImage.type());
 
     /* compute horizontal sobel f_x */
-    for (int j = 1; j < myImage.rows-1; j++)
-    {
+    for (int j = 1; j < myImage.rows-1; j++) {
         const uchar* previous = myImage.ptr<uchar>(j - 1);
         const uchar* next     = myImage.ptr<uchar>(j + 1);
         uchar* output = Result.ptr<uchar>(j);
-        for (int i = nChannels; i < nChannels*(myImage.cols-1); i++)
-        {
+        for (int i = nChannels; i < nChannels*(myImage.cols-1); i++) {
             *output++ = cv::saturate_cast<uchar>(next[i-nChannels] + 2 * next[i] + next[i+nChannels]
                     - previous[i-nChannels] - 2 * previous[i] - previous[i+nChannels]);
         }
@@ -28,14 +26,12 @@ void seam::sobel(const cv::Mat& myImage, cv::Mat& Result)
     /* compute vertical sobel */
     cv::Mat ResultY;
     ResultY.create(myImage.size(),myImage.type());
-    for(int j = 1; j < myImage.rows-1; j++)
-    {
+    for(int j = 1; j < myImage.rows-1; j++) {
         const uchar* previous = myImage.ptr<uchar>(j - 1);
         const uchar* current = myImage.ptr<uchar>(j);
         const uchar* next     = myImage.ptr<uchar>(j + 1);
         uchar* output = ResultY.ptr<uchar>(j);
-        for(int i= nChannels; i < nChannels*(myImage.cols-1); ++i)
-        {
+        for(int i= nChannels; i < nChannels*(myImage.cols-1); ++i){
             *output++ = cv::saturate_cast<uchar>(previous[i+nChannels] + 2 * current[i+nChannels]
                     + next[i+nChannels] - previous[i-nChannels] - 2 * current[i-nChannels]
                     - next[i-nChannels]);
@@ -49,4 +45,53 @@ void seam::sobel(const cv::Mat& myImage, cv::Mat& Result)
 
     /* add vertical gradients to horizontal gradients on input image */
     cv::add(Result, ResultY, Result);
+    ResultY.release();
 }
+
+std::vector<std::pair<quint32, quint32>> seam::seamVertical(cv::Mat& gradientImage,
+                                                            std::vector<std::vector<bool>>& blockedPixels)
+{
+    const int nrows = gradientImage.rows, ncols = gradientImage.cols;
+    CV_Assert(gradientImage.depth() == CV_8UC1);  // accept only uchar single channel images
+    /* create 2D vector for energy sums with additional border to prevent edge cases */
+    std::vector<std::vector<ulong>> energySum(nrows, std::vector<ulong>(ncols + 2, ULONG_MAX));
+    /* initialize first row */
+    for (int i = 0; i < ncols; i++) {
+        energySum[0][i+1] = gradientImage.at<uchar>(0, i);
+    }
+    /* Compute energy sum via: E[i,j] = G[i,j] + min{E[i-1,j-1], E[i-1,j], E[i-1,j-1]} */
+    for (int i = 1; i < nrows; i++) {
+        for (int j = 0; j < ncols; j++) {
+            /* mind offset for column because of border */
+            ulong energyValue = static_cast<ulong>(gradientImage.at<uchar>(i,j));
+            energySum[i][j+1] =  energyValue + std::min(energySum[i-1][j],
+                    std::min(energySum[i-1][j+1], energySum[i-1][j+2]));
+        }
+    }
+    /* backtrack the seam with the lowest energy sum and set seam to UINT_MAX on gradient image */
+    std::vector<std::pair<quint32, quint32>> result(nrows);
+    std::vector<ulong> lastRow = energySum[nrows-1];
+    int col = std::min_element(lastRow.begin(), lastRow.end()) - lastRow.begin(); // start column index
+    gradientImage.at<uchar>(nrows-1, col-1) = UCHAR_MAX;
+    if (col > 1) gradientImage.at<uchar>(nrows-1, col-2) = UCHAR_MAX;
+    if (col < nrows - 1) gradientImage.at<uchar>(nrows-1, col) = UCHAR_MAX;
+    result[nrows-1] = std::pair<quint32, quint32>(nrows-1, col-1);
+    for (int i = nrows-2; i >= 0; i--) {
+        /* find next column index: I[i,j] = argmin{I[i-1,j-1], I[i-1,j], I[i-1, j+1]} and
+            delete seam by setting it on high values. */
+        std::vector<ulong>* row = &energySum[i];
+        col = std::min_element(row->begin() + col - 1, row->begin() + col + 2)
+                - row->begin();
+        gradientImage.at<uchar>(i,col-1) = UCHAR_MAX;
+        result[i] = std::pair<quint32, quint32>(i, col-1);
+    }
+    return result;
+}
+
+std::vector<std::pair<quint32, quint32>> seam::seamHorizontal(cv::Mat& gradientImage,
+                                                            std::vector<std::vector<bool>>& blockedPixels)
+{
+    return std::vector<std::pair<quint32, quint32>>();
+}
+
+
