@@ -63,8 +63,9 @@ std::vector<uint> seam::seamVertical(cv::Mat& gradientImage, std::vector<std::ve
         for (int j = 0; j < ncols; j++) {
             /* mind offset for column because of border */
             ulong energyValue = static_cast<ulong>(gradientImage.at<uchar>(i,j));
-            bool blocked = blockedPixels[i][j+1] ||(blockedPixels[i-1][j] && blockedPixels[i-1][j+1]
-                    && blockedPixels[i-1][j+2]);
+            /* pixel can't be used, if it is blocked or if it would cause a crossing of seams */
+            bool blocked = blockedPixels[i][j+1] || (blockedPixels[i-1][j+1] && (blockedPixels[i][j]
+                    || blockedPixels[i][j+2]));
             energySum[i][j+1] = blocked ? UINT_MAX : energyValue + std::min(energySum[i-1][j],
                     std::min(energySum[i-1][j+1], energySum[i-1][j+2]));
         }
@@ -75,30 +76,73 @@ std::vector<uint> seam::seamVertical(cv::Mat& gradientImage, std::vector<std::ve
     int col = std::min_element(lastRow.begin(), lastRow.end()) - lastRow.begin(); // start column index
     gradientImage.at<uchar>(nrows-1, col-1) = UCHAR_MAX;
     /* block pixel of seam and the two neighbours to the left and right to prevent crossing */
-    blockedPixels[nrows-1][col-1] = true;
     blockedPixels[nrows-1][col] = true;
-    blockedPixels[nrows-1][col+1] = true;
-    result[nrows-1] = col-1;
+    result[nrows-1] = col - 1;
     for (int i = nrows-2; i >= 0; i--) {
-        /* find next column index: I[i,j] = argmin{I[i-1,j-1], I[i-1,j], I[i-1, j+1]} and
+        /* find next column index: I[i,j] = argmin{I[i+1,j-1], I[i+1,j], I[i+1, j+1]} and
             delete seam by setting it on high values. */
         std::vector<ulong>* row = &energySum[i];
         col = std::min_element(row->begin() + col - 1, row->begin() + col + 2)
                 - row->begin();
         gradientImage.at<uchar>(i,col-1) = UCHAR_MAX;
         /* block pixel of seam and the two neighbours to the left and right to prevent crossing */
-        blockedPixels[i][col-1] = true;
         blockedPixels[i][col] = true;
-        blockedPixels[i][col+1] = true;
-
-        result[i] = col-1;
+        result[i] = col - 1;
     }
     return result;
 }
 
 std::vector<uint> seam::seamHorizontal(cv::Mat& gradientImage, std::vector<std::vector<bool>>& blockedPixels)
 {
-    return std::vector<uint>();
+    const int nrows = gradientImage.rows, ncols = gradientImage.cols;
+    CV_Assert(gradientImage.depth() == CV_8UC1);  // accept only uchar single channel images
+    /* create 2D vector for energy sums with additional border to prevent edge cases */
+    std::vector<std::vector<ulong>> energySum(nrows + 2, std::vector<ulong>(ncols, UINT_MAX));
+    /* initialize first col */
+    for (int i = 0; i < nrows; i++) {
+        energySum[i+1][0] = blockedPixels[i+1][0] ? UINT_MAX : gradientImage.at<uchar>(i, 0);
+    }
+    /* Compute energy sum via: E[i,j] = G[i,j] + min{E[i-1,j-1], E[i,j-1], E[i+1,j-1]} */
+    for (int j = 1; j < ncols; j++) {
+        for (int i = 0; i < nrows; i++) {
+            /* mind offset for column because of border */
+            ulong energyValue = static_cast<ulong>(gradientImage.at<uchar>(i,j));
+            /* pixel can't be used, if it is blocked or if it would cause a crossing of seams */
+            bool blocked = blockedPixels[i+1][j] || (blockedPixels[i+1][j-1] && (blockedPixels[i][j]
+                    || blockedPixels[i+2][j]));
+            energySum[i+1][j] = blocked ? UINT_MAX : energyValue + std::min(energySum[i][j-1],
+                    std::min(energySum[i+1][j-1], energySum[i+2][j-1]));
+        }
+    }
+    /* backtrack the seam with the lowest energy sum and set seam to UCHAR_MAX on gradient image */
+    std::vector<uint> result(ncols);
+    uint row = 0, min = UINT_MAX;
+    for (int i = 1; i <= nrows; i++) {
+        if (energySum[i][ncols-1] < min) {
+            min = energySum[i][ncols-1];
+            row = i;
+        }
+    }
+    gradientImage.at<uchar>(row-1, ncols-1) = UCHAR_MAX;
+    /* block pixel of seam and the two neighbours to the left and right to prevent crossing */
+    blockedPixels[row][ncols-1] = true;
+    result[ncols-1] = row - 1;
+    for (int i = ncols-2; i >= 0; i--) {
+        /* find next column index: I[i,j] = argmin{I[i-1,j+1], I[i,j+1], I[i+1, j+1]} and
+            delete seam by setting it on high values/blocking pixels. */
+        min = UINT_MAX;
+        int nextRow = 0;
+        for (int j = -1; j <= 1; j++) {
+            if (energySum[row+j][i] < min){
+                min = energySum[row+j][i];
+                nextRow = row + j;
+            }
+        }
+        row = nextRow;
+        gradientImage.at<uchar>(row-1, i) = UCHAR_MAX;
+        /* block pixel of seam and the two neighbours to the left and right to prevent crossing */
+        blockedPixels[row][i] = true;
+        result[i] = row - 1;
+    }
+    return result;
 }
-
-

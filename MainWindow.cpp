@@ -64,7 +64,7 @@ void MainWindow::on_pbComputeSeams_clicked()
     seam::sobel(grayscaleImage, gradientImage);
     grayscaleImage.release();
 
-    cv::Mat gradientImageCopy = gradientImage;
+    cv::Mat gradientImageCopy = gradientImage; /* Only needed for visualization. @todo: delete */
     /* In the beginning, all pixel are not blocked. Matrix has two extra columns for the borders. */
     std::vector<std::vector<bool>> blockedPixels(gradientImage.rows, std::vector<bool>(gradientImage.cols + 2, false));
 
@@ -73,24 +73,24 @@ void MainWindow::on_pbComputeSeams_clicked()
         std::vector<uint> seam = seam::seamVertical(gradientImage, blockedPixels);
         seamsVertical.emplace_back(seam);
     }
-    for (int row = 0; row < gradientImage.rows; row++){
-        for (auto& seam : seamsVertical) {
-            std::cout << "row: " << row << " col: " << seam[row] << std::endl;
-        }
-        std::cout << " " << std::endl;
-    }
+    cv::imshow("vertical", gradientImage);
+
     /* Reset blocked pixels. In the beginning, all pixel are not blocked. Matrix has two extra columns
      * for the borders. */
     for (auto& row : blockedPixels) {
         std::fill(row.begin(), row.end(), 0);
+        row.pop_back();
+        row.pop_back();
     }
-    cv::imshow("vertical seams", gradientImage);
+    blockedPixels.emplace_back(std::vector<bool>(gradientImage.cols, false));
+    blockedPixels.emplace_back(std::vector<bool>(gradientImage.cols, false));
 
     /* Compute horizontal seams and store them. */
     for (int i = 0; i < rowsToRemove; i++) {
         std::vector<uint> seam = seam::seamHorizontal(gradientImageCopy, blockedPixels);
         seamsHorizontal.emplace_back(seam);
     }
+    cv::imshow("horizontal", gradientImage);
     gradientImage.release();
     gradientImageCopy.release();
 }
@@ -103,8 +103,11 @@ void MainWindow::on_pbRemoveSeams_clicked()
         return;
     }
 
-    /* Remove all seams that were computed earlier. */
+    /* Remove all vertical seams that were computed earlier. */
 
+    /* Adjust horizontal seams to compensate removed vertical seams. */
+
+    /* Remove all updated horizontal seams. */
 }
 
 void MainWindow::setupUi()
