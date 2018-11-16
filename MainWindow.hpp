@@ -71,8 +71,8 @@ private:
     cv::Mat         originalImage;
 
     /* computed seams */
-    std::vector<std::vector<uint>> seamsHorizontal;
-    std::vector<std::vector<uint>> seamsVertical;
+    std::vector<std::vector<int>> seamsHorizontal;
+    std::vector<std::vector<int>> seamsVertical;
     
     /* Methode initialisiert die UI */
     void setupUi();

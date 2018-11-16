@@ -48,7 +48,7 @@ void seam::sobel(const cv::Mat& myImage, cv::Mat& Result)
     ResultY.release();
 }
 
-std::vector<uint> seam::seamVertical(cv::Mat& gradientImage, std::vector<std::vector<bool>>& blockedPixels)
+std::vector<int> seam::seamVertical(cv::Mat& gradientImage, std::vector<std::vector<bool>>& blockedPixels)
 {
     const int nrows = gradientImage.rows, ncols = gradientImage.cols;
     CV_Assert(gradientImage.depth() == CV_8UC1);  // accept only uchar single channel images
@@ -71,7 +71,7 @@ std::vector<uint> seam::seamVertical(cv::Mat& gradientImage, std::vector<std::ve
         }
     }
     /* backtrack the seam with the lowest energy sum and set seam to UCHAR_MAX on gradient image */
-    std::vector<uint> result(nrows);
+    std::vector<int> result(nrows);
     std::vector<ulong> lastRow = energySum[nrows-1];
     int col = std::min_element(lastRow.begin(), lastRow.end()) - lastRow.begin(); // start column index
     gradientImage.at<uchar>(nrows-1, col-1) = UCHAR_MAX;
@@ -92,7 +92,7 @@ std::vector<uint> seam::seamVertical(cv::Mat& gradientImage, std::vector<std::ve
     return result;
 }
 
-std::vector<uint> seam::seamHorizontal(cv::Mat& gradientImage, std::vector<std::vector<bool>>& blockedPixels)
+std::vector<int> seam::seamHorizontal(cv::Mat& gradientImage, std::vector<std::vector<bool>>& blockedPixels)
 {
     const int nrows = gradientImage.rows, ncols = gradientImage.cols;
     CV_Assert(gradientImage.depth() == CV_8UC1);  // accept only uchar single channel images
@@ -115,7 +115,7 @@ std::vector<uint> seam::seamHorizontal(cv::Mat& gradientImage, std::vector<std::
         }
     }
     /* backtrack the seam with the lowest energy sum and set seam to UCHAR_MAX on gradient image */
-    std::vector<uint> result(ncols);
+    std::vector<int> result(ncols);
     uint row = 0, min = UINT_MAX;
     for (int i = 1; i <= nrows; i++) {
         if (energySum[i][ncols-1] < min) {
@@ -145,4 +145,30 @@ std::vector<uint> seam::seamHorizontal(cv::Mat& gradientImage, std::vector<std::
         result[i] = row - 1;
     }
     return result;
+}
+
+void seam::deleteSeamsVertical(const cv::Mat& input, cv::Mat& output, const std::vector<std::vector<int>>& seams)
+{
+    const int newNumberOfCols = input.cols - seams.size();
+    const int nChannels = input.channels();
+    output.create(input.rows, newNumberOfCols, input.type());
+
+    /* for every row, copy all values from input, while ignoring pixels from seams */
+    for (int i = 0; i < input.rows; i++) {
+        int seamOffset = 0; /* number of seams in this row, that were already crossed */
+        const uchar* inputRow = input.ptr<uchar>(i);
+        uchar* outputRow = output.ptr<uchar>(i);
+        for (int j = 0; j < nChannels * newNumberOfCols; j++) {
+            if (static_cast<size_t>(seamOffset) < seams.size() - 1 && seams[seamOffset][i] * nChannels <= j)
+                seamOffset++;
+            *outputRow = inputRow[j + seamOffset * nChannels];
+            outputRow++;
+        }
+    }
+}
+
+void seam::deleteSeamsHorizontal(const cv::Mat& input, cv::Mat& output, const std::vector<std::vector<int>>& seams)
+{
+    int newNumberOfRows = input.rows - seams.size();
+    output.create(newNumberOfRows, input.cols, input.type());
 }
