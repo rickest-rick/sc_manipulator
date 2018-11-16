@@ -105,18 +105,31 @@ void MainWindow::on_pbRemoveSeams_clicked()
 
     /* Remove all vertical seams that were computed earlier in ascending order. */
 	std::sort(seamsVertical.begin(), seamsVertical.end(),
-              [](const std::vector<int>& a, const std::vector<int> b) {
+              [](const std::vector<int>& a, const std::vector<int>& b) {
         return a[0] < b[0];
     });
     cv::Mat vImage;
-    seam::deleteSeamsVertical(originalImage, vImage, seamsVertical);
-    cv::imshow("deleted vertical", vImage);
+    //seam::deleteSeamsVertical(originalImage, vImage, seamsVertical);
+    //cv::imshow("deleted vertical", vImage);
     
-    /* Compute all horizontal seams. */
-    
-    // seam::deleteHorizontalSeams(vImage, vhImage, seamsVertical);
+    /* Compute all horizontal seams.
+    for (int i = 0; i < rowsToRemove; i++) {
+        std::vector<int> seam = seam::seamHorizontal(gradientImage, blockedPixels);
+        seamsHorizontal.emplace_back(seam);
+    }*/
+
+    std::sort(seamsHorizontal.begin(), seamsHorizontal.end(),
+              [](const std::vector<int>& a, const std::vector<int>& b) {
+        return a[0] < b[0];
+    });
+    seam::deleteSeamsHorizontal(originalImage, vImage, seamsHorizontal);
+
+    cv::imshow("deleted horizontal", vImage);
     // imshow("Downscaled Image", vhImage);
     // imwrite( "../../images/_s.jpg", vhImage);
+
+    seamsHorizontal.clear();
+    seamsVertical.clear();
 }
 
 void MainWindow::setupUi()

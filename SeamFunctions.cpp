@@ -64,10 +64,15 @@ std::vector<int> seam::seamVertical(cv::Mat& gradientImage, std::vector<std::vec
             /* mind offset for column because of border */
             ulong energyValue = static_cast<ulong>(gradientImage.at<uchar>(i,j));
             /* pixel can't be used, if it is blocked or if it would cause a crossing of seams */
-            bool blocked = blockedPixels[i][j+1] || (blockedPixels[i-1][j+1] && (blockedPixels[i][j]
-                    || blockedPixels[i][j+2]));
-            energySum[i][j+1] = blocked ? UINT_MAX : energyValue + std::min(energySum[i-1][j],
-                    std::min(energySum[i-1][j+1], energySum[i-1][j+2]));
+            if (blockedPixels[i-1][j+1]) {
+                if (blockedPixels[i][j])
+                    energySum[i][j+1] = energyValue + energySum[i-1][j+2];
+                else if (blockedPixels[i][j+2])
+                    energySum[i][j+1] = energyValue + energySum[i-1][j];
+            } else {
+                energySum[i][j+1] = blockedPixels[i][j+1] ? UINT_MAX : energyValue + std::min(energySum[i-1][j],
+                        std::min(energySum[i-1][j+1], energySum[i-1][j+2]));
+            }
         }
     }
     /* backtrack the seam with the lowest energy sum and set seam to UCHAR_MAX on gradient image */
@@ -108,10 +113,15 @@ std::vector<int> seam::seamHorizontal(cv::Mat& gradientImage, std::vector<std::v
             /* mind offset for column because of border */
             ulong energyValue = static_cast<ulong>(gradientImage.at<uchar>(i,j));
             /* pixel can't be used, if it is blocked or if it would cause a crossing of seams */
-            bool blocked = blockedPixels[i+1][j] || (blockedPixels[i+1][j-1] && (blockedPixels[i][j]
-                    || blockedPixels[i+2][j]));
-            energySum[i+1][j] = blocked ? UINT_MAX : energyValue + std::min(energySum[i][j-1],
-                    std::min(energySum[i+1][j-1], energySum[i+2][j-1]));
+            if (blockedPixels[i+1][j-1]) {
+                if (blockedPixels[i][j])
+                    energySum[i+1][j] = energyValue + energySum[i+2][j-1];
+                else if (blockedPixels[i+2][j])
+                    energySum[i+1][j] = energyValue + energySum[i][j-1];
+            } else {
+                energySum[i+1][j] = blockedPixels[i+1][j] ? UINT_MAX : energyValue + std::min(energySum[i][j-1],
+                        std::min(energySum[i+1][j-1], energySum[i+2][j-1]));
+            }
         }
     }
     /* backtrack the seam with the lowest energy sum and set seam to UCHAR_MAX on gradient image */
@@ -123,6 +133,8 @@ std::vector<int> seam::seamHorizontal(cv::Mat& gradientImage, std::vector<std::v
             row = i;
         }
     }
+    if (row == 0)
+        std::cout << "row: " << row - 1 << std::endl;
     gradientImage.at<uchar>(row-1, ncols-1) = UCHAR_MAX;
     /* block pixel of seam and the two neighbours to the left and right to prevent crossing */
     blockedPixels[row][ncols-1] = true;
@@ -159,7 +171,7 @@ void seam::deleteSeamsVertical(const cv::Mat& input, cv::Mat& output, const std:
         const uchar* inputRow = input.ptr<uchar>(i);
         uchar* outputRow = output.ptr<uchar>(i);
         for (int j = 0; j < nChannels * newNumberOfCols; j++) {
-            if (static_cast<size_t>(seamOffset) < seams.size() - 1 && seams[seamOffset][i] * nChannels <= j)
+            if (static_cast<size_t>(seamOffset) < seams.size() && seams[seamOffset][i] * nChannels <= j)
                 seamOffset++;
             *outputRow = inputRow[j + seamOffset * nChannels];
             outputRow++;
@@ -169,6 +181,19 @@ void seam::deleteSeamsVertical(const cv::Mat& input, cv::Mat& output, const std:
 
 void seam::deleteSeamsHorizontal(const cv::Mat& input, cv::Mat& output, const std::vector<std::vector<int>>& seams)
 {
+    const int newNumberOfCols = input.cols - seams.size();
+    const int nChannels = input.channels();
     int newNumberOfRows = input.rows - seams.size();
     output.create(newNumberOfRows, input.cols, input.type());
+
+    /* for every column, copy all values from input, while ignoring pixels from seams */
+    for (int j = 0; j < input.cols; j++) {
+        int seamOffset = 0; /* number of seams in this column, that were already crossed */
+        for (int i = 0; i < newNumberOfRows; i++) {
+            if (static_cast<size_t>(seamOffset) < seams.size() && seams[seamOffset][j] <= i)
+                seamOffset++;
+            output.at<cv::Vec3b>(i,j) = input.at<cv::Vec3b>(i + seamOffset, j);
+        }
+    }
+
 }
