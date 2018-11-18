@@ -56,7 +56,6 @@ namespace seam {
      * 		  ensure they are sorted
      * 
      * @details 
-     * @
      */
     void deleteSeamsVertical(const cv::Mat& input, cv::Mat& output, 
                              const std::vector<std::vector<int>>& verticalSeams);
@@ -70,6 +69,16 @@ namespace seam {
      */
     void deleteSeamsHorizontal(const cv::Mat& input, cv::Mat& output, 
                              const std::vector<std::vector<int>>& verticalSeams);
+
+    /**
+     * @brief Adjust horizontal seams based on vertical seams, which were calculated on the same picture.
+     * @param verticalSeams
+     * @param horizontalSeams
+     * @attention This method has it flaws, if single horizontal and vertical seams have long overlapping parts, for
+     * 			  a vertical seam and horizontal seam which both go from the top left to the bottom right.
+     */
+    void combineVerticalHorizontalSeams(const std::vector<std::vector<int>>& verticalSeams,
+                                          std::vector<std::vector<int>>& horizontalSeams);
 } // namespace
 
 #endif // SEAMFUNCTIONS_H

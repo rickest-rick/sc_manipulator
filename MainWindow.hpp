@@ -70,6 +70,8 @@ private:
     
     /* Originalbild */
     cv::Mat         originalImage;
+    /* Picture with deleted seams. */
+    cv::Mat 		modifiedImage;
 
     /* computed seams */
     std::vector<std::vector<int>> seamsHorizontal;

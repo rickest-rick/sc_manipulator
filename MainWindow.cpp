@@ -119,13 +119,15 @@ void MainWindow::on_pbRemoveSeams_clicked()
         return;
     }
 
-    /* Remove all vertical seams that were computed earlier in ascending order. */
 	std::sort(seamsVertical.begin(), seamsVertical.end(),
               [](const std::vector<int>& a, const std::vector<int>& b) {
         return a[0] < b[0];
     });
     cv::Mat verticalDeletedImage;
+    /* Remove all vertical seams that were computed earlier in ascending order. */
     seam::deleteSeamsVertical(originalImage, verticalDeletedImage, seamsVertical);
+
+    seam::combineVerticalHorizontalSeams(seamsVertical, seamsHorizontal);
 
     std::sort(seamsHorizontal.begin(), seamsHorizontal.end(),
               [](const std::vector<int>& a, const std::vector<int>& b) {
@@ -133,10 +135,12 @@ void MainWindow::on_pbRemoveSeams_clicked()
     });
 
     cv::Mat seamsDeletedImage;
+    /* Remove all horizontal seams that were computed earlier in ascending order and adjusted for the already removed
+       vertical seams. */
     seam::deleteSeamsHorizontal(verticalDeletedImage, seamsDeletedImage, seamsHorizontal);
 
     cv::imshow("Downscaled Image", seamsDeletedImage);
-    // imwrite( "../../images/_s.jpg", vhImage);
+    modifiedImage = seamsDeletedImage;
 
     seamsHorizontal.clear();
     seamsVertical.clear();

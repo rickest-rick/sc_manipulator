@@ -203,5 +203,21 @@ void seam::deleteSeamsHorizontal(const cv::Mat& input, cv::Mat& output, const st
             output.at<cv::Vec3b>(i,j) = input.at<cv::Vec3b>(i + seamOffset, j);
         }
     }
+}
+
+void seam::combineVerticalHorizontalSeams(const std::vector<std::vector<int>>& verticalSeams,
+                                            std::vector<std::vector<int>>& horizontalSeams)
+{
+    const int newNCols = horizontalSeams[0].size() - verticalSeams.size();
+    for (auto& horizontalSeam : horizontalSeams) {
+        int offset = 0;
+        for (int col = 0; col < newNCols; col++) {
+            if (col >= verticalSeams[offset][horizontalSeam[col]]) /* horizontal seam crossed another vertical seam */
+                offset++;
+            horizontalSeam[col] = horizontalSeam[col + offset]; /* skip columns with crossed vertical seams */
+        }
+        /* update length */
+        horizontalSeam.erase(horizontalSeam.begin() + newNCols, horizontalSeam.end());
+    }
 
 }
