@@ -12,6 +12,7 @@ TARGET = SeamCarving
 TEMPLATE = app
 
 QMAKE_CFLAGS_ISYSTEM = -I
+QMAKE_CXXFLAGS_RELEASE *= -O3
 
 SOURCES += main.cpp\
         MainWindow.cpp \

@@ -83,6 +83,12 @@ private:
 
     /* Method that shows error message that no seams are present that can be removed. */
     void noSeamsError();
+
+    /* Method that shows error message that no more non-blocking horizontal seams can be computed. */
+    void seamsHorizontalBlockError(int i);
+
+    /* Method that shows error message that no more non-blocking vertical seams can be computed, */
+    void seamsVerticalBlockError(int i);
 };
 
 #endif // MAINWINDOW_HPP

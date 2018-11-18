@@ -51,6 +51,10 @@ void MainWindow::on_pbOpenImage_clicked()
 
 void MainWindow::on_pbComputeSeams_clicked()
 {
+    /* reset seams */
+    seamsVertical.clear();
+    seamsHorizontal.clear();
+
     /* Anzahl der Spalten, die entfernt werden sollen */
     int colsToRemove = sbCols->value();
     
@@ -71,7 +75,13 @@ void MainWindow::on_pbComputeSeams_clicked()
     /* Compute vertical seams and store them. */
     for (int i = 0; i < colsToRemove; i++) {
         std::vector<int> seam = seam::seamVertical(gradientImage, blockedPixels);
-        seamsVertical.emplace_back(seam);
+        if (seam)
+            seamsVertical.emplace_back(seam);
+        else {
+            seamsVerticalBlockError(i);
+            break;
+        }
+
     }
     cv::imshow("vertical", gradientImage);
 
@@ -88,9 +98,15 @@ void MainWindow::on_pbComputeSeams_clicked()
     /* Compute horizontal seams and store them. */
     for (int i = 0; i < rowsToRemove; i++) {
         std::vector<int> seam = seam::seamHorizontal(gradientImageCopy, blockedPixels);
-        seamsHorizontal.emplace_back(seam);
+        if (seam)
+            seamsHorizontal.emplace_back(seam);
+        else {
+            seamsHorizontalBlockError(i);
+            break;
+        }
     }
     cv::imshow("horizontal", gradientImageCopy);
+
     gradientImage.release();
     gradientImageCopy.release();
 }
@@ -108,24 +124,18 @@ void MainWindow::on_pbRemoveSeams_clicked()
               [](const std::vector<int>& a, const std::vector<int>& b) {
         return a[0] < b[0];
     });
-    cv::Mat vImage;
-    //seam::deleteSeamsVertical(originalImage, vImage, seamsVertical);
-    //cv::imshow("deleted vertical", vImage);
-    
-    /* Compute all horizontal seams.
-    for (int i = 0; i < rowsToRemove; i++) {
-        std::vector<int> seam = seam::seamHorizontal(gradientImage, blockedPixels);
-        seamsHorizontal.emplace_back(seam);
-    }*/
+    cv::Mat verticalDeletedImage;
+    seam::deleteSeamsVertical(originalImage, verticalDeletedImage, seamsVertical);
 
     std::sort(seamsHorizontal.begin(), seamsHorizontal.end(),
               [](const std::vector<int>& a, const std::vector<int>& b) {
         return a[0] < b[0];
     });
-    seam::deleteSeamsHorizontal(originalImage, vImage, seamsHorizontal);
 
-    cv::imshow("deleted horizontal", vImage);
-    // imshow("Downscaled Image", vhImage);
+    cv::Mat seamsDeletedImage;
+    seam::deleteSeamsHorizontal(verticalDeletedImage, seamsDeletedImage, seamsHorizontal);
+
+    cv::imshow("Downscaled Image", seamsDeletedImage);
     // imwrite( "../../images/_s.jpg", vhImage);
 
     seamsHorizontal.clear();
@@ -240,5 +250,21 @@ void MainWindow::noSeamsError()
 {
     QMessageBox messageBox;
     messageBox.critical(0, "No Seams", "No seams were calculated that can be removed.");
+    messageBox.show();
+}
+
+void MainWindow::seamsVerticalBlockError(int i)
+{
+    QMessageBox messageBox;
+    messageBox.critical(0, "Vertical Seams Blocked", "It is not possible to compute more non-blocking vertical seams. "
+                                                    + i + " vertical seams were computed.");
+    messageBox.show();
+}
+
+void MainWindow::seamsHorizontalBlockError(int i)
+{
+    QMessageBox messageBox;
+    messageBox.critical(0, "Horizontal Seams Blocked", "It is not possible to compute more non-blocking horizontal seams. "
+                                                    + i + " horizontal seams were computed.");
     messageBox.show();
 }

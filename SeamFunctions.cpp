@@ -83,6 +83,8 @@ std::vector<int> seam::seamVertical(cv::Mat& gradientImage, std::vector<std::vec
     /* block pixel of seam and the two neighbours to the left and right to prevent crossing */
     blockedPixels[nrows-1][col] = true;
     result[nrows-1] = col - 1;
+    if (col == 0) /* @todo error handling if no new seams can be computed */
+        std::cout << "col: " << col - 1 << std::endl;
     for (int i = nrows-2; i >= 0; i--) {
         /* find next column index: I[i,j] = argmin{I[i+1,j-1], I[i+1,j], I[i+1, j+1]} and
             delete seam by setting it on high values. */
@@ -133,7 +135,7 @@ std::vector<int> seam::seamHorizontal(cv::Mat& gradientImage, std::vector<std::v
             row = i;
         }
     }
-    if (row == 0)
+    if (row == 0) /* @todo error handling if no new seams can be computed */
         std::cout << "row: " << row - 1 << std::endl;
     gradientImage.at<uchar>(row-1, ncols-1) = UCHAR_MAX;
     /* block pixel of seam and the two neighbours to the left and right to prevent crossing */
