@@ -40,6 +40,7 @@ private slots:
     void on_pbOpenImage_clicked();
     void on_pbComputeSeams_clicked();
     void on_pbRemoveSeams_clicked();
+    void on_pbSaveImage_clicked();
     
 private:
 
@@ -56,6 +57,7 @@ private:
     QPushButton *pbOpenImage;
     QPushButton *pbRemoveSeams;
     QPushButton *pbComputeSeams;
+    QPushButton *pbSaveImage;
     
     QLabel      *lCaption;
     QLabel      *lCols;

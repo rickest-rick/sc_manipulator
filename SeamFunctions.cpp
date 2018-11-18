@@ -212,7 +212,7 @@ void seam::combineVerticalHorizontalSeams(const std::vector<std::vector<int>>& v
     for (auto& horizontalSeam : horizontalSeams) {
         int offset = 0;
         for (int col = 0; col < newNCols; col++) {
-            if (col >= verticalSeams[offset][horizontalSeam[col]]) /* horizontal seam crossed another vertical seam */
+            if (col >= verticalSeams[offset].at(horizontalSeam[col])) /* horizontal seam crossed another vertical seam */
                 offset++;
             horizontalSeam[col] = horizontalSeam[col + offset]; /* skip columns with crossed vertical seams */
         }

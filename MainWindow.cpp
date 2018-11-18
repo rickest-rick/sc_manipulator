@@ -144,6 +144,18 @@ void MainWindow::on_pbRemoveSeams_clicked()
 
     seamsHorizontal.clear();
     seamsVertical.clear();
+    pbSaveImage->setEnabled(true);
+}
+
+void MainWindow::on_pbSaveImage_clicked()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save Image"), "", tr("Images (*.png *.xpm *.jpg)"));
+    if (fileName.isEmpty())
+        disableGUI();
+    else {
+        QImage image = QtOpencvCore::img2qimg(modifiedImage);
+        image.save(fileName);
+    }
 }
 
 void MainWindow::setupUi()
@@ -163,8 +175,7 @@ void MainWindow::setupUi()
     
     pbOpenImage = new QPushButton(QString("Open Image"), centralWidget);
     verticalLayout->addWidget(pbOpenImage);
-    
-    
+
     verticalLayout_3 = new QVBoxLayout();
     lCaption = new QLabel(QString("Remove"), centralWidget);
     lCaption->setEnabled(false);
@@ -197,6 +208,11 @@ void MainWindow::setupUi()
     pbRemoveSeams = new QPushButton(QString("Remove Seams"), centralWidget);
     pbRemoveSeams->setEnabled(false);
     verticalLayout->addWidget(pbRemoveSeams);
+
+    pbSaveImage = new QPushButton(QString("Save Image"), centralWidget);
+    pbSaveImage->setEnabled(false);
+    verticalLayout->addWidget(pbSaveImage);
+
     
     verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
     verticalLayout->addItem(verticalSpacer);
@@ -212,6 +228,7 @@ void MainWindow::setupUi()
     connect(pbOpenImage,    &QPushButton::clicked, this, &MainWindow::on_pbOpenImage_clicked);  
     connect(pbComputeSeams, &QPushButton::clicked, this, &MainWindow::on_pbComputeSeams_clicked); 
     connect(pbRemoveSeams,  &QPushButton::clicked, this, &MainWindow::on_pbRemoveSeams_clicked);
+    connect(pbSaveImage, 	&QPushButton::clicked, this, &MainWindow::on_pbSaveImage_clicked);
 }
 
 void MainWindow::enableGUI()
@@ -248,6 +265,7 @@ void MainWindow::disableGUI()
     
     pbComputeSeams->setEnabled(false);
     pbRemoveSeams->setEnabled(false);
+    pbSaveImage->setEnabled(false);
 }
 
 void MainWindow::noSeamsError()
