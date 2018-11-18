@@ -75,7 +75,7 @@ void MainWindow::on_pbComputeSeams_clicked()
     /* Compute vertical seams and store them. */
     for (int i = 0; i < colsToRemove; i++) {
         std::vector<int> seam = seam::seamVertical(gradientImage, blockedPixels);
-        if (seam)
+        if (seam.size() != 0)
             seamsVertical.emplace_back(seam);
         else {
             seamsVerticalBlockError(i);
@@ -98,7 +98,7 @@ void MainWindow::on_pbComputeSeams_clicked()
     /* Compute horizontal seams and store them. */
     for (int i = 0; i < rowsToRemove; i++) {
         std::vector<int> seam = seam::seamHorizontal(gradientImageCopy, blockedPixels);
-        if (seam)
+        if (seam.size() != 0)
             seamsHorizontal.emplace_back(seam);
         else {
             seamsHorizontalBlockError(i);
@@ -256,15 +256,15 @@ void MainWindow::noSeamsError()
 void MainWindow::seamsVerticalBlockError(int i)
 {
     QMessageBox messageBox;
-    messageBox.critical(0, "Vertical Seams Blocked", "It is not possible to compute more non-blocking vertical seams. "
-                                                    + i + " vertical seams were computed.");
+    messageBox.critical(0, "Vertical Seams Blocked", QString("It is not possible to compute more non-blocking vertical "
+                                                     "seams. %1 vertical seams were computed.").arg(i));
     messageBox.show();
 }
 
 void MainWindow::seamsHorizontalBlockError(int i)
 {
     QMessageBox messageBox;
-    messageBox.critical(0, "Horizontal Seams Blocked", "It is not possible to compute more non-blocking horizontal seams. "
-                                                    + i + " horizontal seams were computed.");
+    messageBox.critical(0, "Horizontal Seams Blocked", QString("It is not possible to compute more non-blocking "
+                                                       "horizontal seams. %1 horizontal seams were computed.").arg(i));
     messageBox.show();
 }

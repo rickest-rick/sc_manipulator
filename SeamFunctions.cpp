@@ -78,19 +78,23 @@ std::vector<int> seam::seamVertical(cv::Mat& gradientImage, std::vector<std::vec
     /* backtrack the seam with the lowest energy sum and set seam to UCHAR_MAX on gradient image */
     std::vector<int> result(nrows);
     std::vector<ulong> lastRow = energySum[nrows-1];
-    int col = std::min_element(lastRow.begin(), lastRow.end()) - lastRow.begin(); // start column index
+    uint col = std::min_element(lastRow.begin(), lastRow.end()) - lastRow.begin(); // start column index
     gradientImage.at<uchar>(nrows-1, col-1) = UCHAR_MAX;
     /* block pixel of seam and the two neighbours to the left and right to prevent crossing */
     blockedPixels[nrows-1][col] = true;
     result[nrows-1] = col - 1;
-    if (col == 0) /* @todo error handling if no new seams can be computed */
-        std::cout << "col: " << col - 1 << std::endl;
+    if (col == 0) /* all pixels are blocked, seams can't be computed. */
+        return std::vector<int>();
+
     for (int i = nrows-2; i >= 0; i--) {
         /* find next column index: I[i,j] = argmin{I[i+1,j-1], I[i+1,j], I[i+1, j+1]} and
             delete seam by setting it on high values. */
         std::vector<ulong>* row = &energySum[i];
         col = std::min_element(row->begin() + col - 1, row->begin() + col + 2)
                 - row->begin();
+        if (col == 0) /* all pixels are blocked, seams can't be computed. */
+            return std::vector<int>();
+
         gradientImage.at<uchar>(i,col-1) = UCHAR_MAX;
         /* block pixel of seam and the two neighbours to the left and right to prevent crossing */
         blockedPixels[i][col] = true;
@@ -135,8 +139,8 @@ std::vector<int> seam::seamHorizontal(cv::Mat& gradientImage, std::vector<std::v
             row = i;
         }
     }
-    if (row == 0) /* @todo error handling if no new seams can be computed */
-        std::cout << "row: " << row - 1 << std::endl;
+    if (row == 0) /* all pixels are blocked, seams can't be computed. */
+        return std::vector<int>();
     gradientImage.at<uchar>(row-1, ncols-1) = UCHAR_MAX;
     /* block pixel of seam and the two neighbours to the left and right to prevent crossing */
     blockedPixels[row][ncols-1] = true;
@@ -152,7 +156,9 @@ std::vector<int> seam::seamHorizontal(cv::Mat& gradientImage, std::vector<std::v
                 nextRow = row + j;
             }
         }
-        row = nextRow;
+        if (row == 0) /* all pixels are blocked, seams can't be computed. */
+            return std::vector<int>();
+        else row = nextRow;
         gradientImage.at<uchar>(row-1, i) = UCHAR_MAX;
         /* block pixel of seam and the two neighbours to the left and right to prevent crossing */
         blockedPixels[row][i] = true;
